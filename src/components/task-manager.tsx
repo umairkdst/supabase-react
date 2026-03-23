@@ -44,17 +44,35 @@ function TaskManager({ session }: { session: Session }) {
     const handleSubmit = async (e: any) => {
         e.preventDefault();
 
-        const { error } = await supabase.from('tasks').insert({ ...newTask, email: session.user.email }).single();
+        const { error } = await supabase.from('tasks').insert({ ...newTask, email: session.user.email }).select().single();
 
         if (error) {
             console.error("Error adding task: ", error.message);
             return;
         }
+
         setNewTask({ title: '', description: '' });
     };
 
     useEffect(() => {
         fetchTasks();
+    }, []);
+
+    useEffect(() => {
+        const channel = supabase.channel("task-channel");
+        channel.on("postgres_changes", { event: "INSERT", schema: "public", table: "tasks" }, (payload) => {
+            const newTask = payload.new as Task | undefined;
+            if (!newTask) return;
+            setTasks((prev) => [...prev, newTask]);
+        }).subscribe((status, err) => {
+            console.log("Subscription: ", status);
+            if (err) console.error("Subscription error: ", err);
+        });
+
+        return () => {
+            // Prevent duplicate subscriptions if React re-mounts the component.
+            channel.unsubscribe();
+        };
     }, []);
 
     return (
