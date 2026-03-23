@@ -1,4 +1,4 @@
-import { useState, FormEvent, ChangeEvent } from "react";
+import { useState, type FormEvent, type ChangeEvent } from "react";
 import { supabase } from "../supabase-client";
 
 function Auth() {
@@ -15,7 +15,7 @@ function Auth() {
                 password,
             });
             if (signUpError) {
-                console.error("Error signing up:", signUpError.message);
+                console.error("Error signing up: ", signUpError.message);
                 return;
             }
         } else {
